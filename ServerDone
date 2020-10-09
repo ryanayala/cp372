@@ -1,0 +1,55 @@
+import java.net.*;
+import java.io.*;
+
+public class libserver {
+
+    static Set clientset = Collections.synchronizedSet(new HashSet());
+    
+    public static void main(String[] args) throws IOException{
+    
+        ServerSocket serverSocket=null;
+        
+        try {
+            serverSocket = new ServerSocket(80);
+        } catch (IOException e0) {
+            System.err.println("Could not listen on port: 80.");
+            System.exit(1);
+        }
+
+        Socket lib_clientS = null;
+        while(1){
+        try {
+            lib_clientS = serverSocket.accept();
+            clientset.add();
+
+
+
+            System.out.println("Client connected\n");
+       
+
+            PrintWriter out = new PrintWriter(lib_clientS.getOutputStream(), true);
+            BufferedReader in = new BufferedReader(
+                new InputStreamReader(
+                lib_clientS.getInputStream())); 
+        
+            String str = in.readLine();
+            //System.out.println(str);
+
+            LibraryProtocol   lib_proto= new LibraryProtocol(out,in,str,lib_clientS);
+
+            Thread thread = new thread(lib_proto);
+
+
+            thread.start();
+
+
+
+        } catch (IOException e1) {
+            System.err.println("Accept failed.");
+            System.exit(1);
+        }
+    }
+        
+
+}
+}
