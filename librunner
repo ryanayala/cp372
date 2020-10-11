@@ -1,0 +1,16 @@
+package lib;
+
+public class lib_run {
+
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		lib_layout lib = new lib_layout();
+		lib.setVisible(true);
+		
+
+				
+		
+	}
+
+}
