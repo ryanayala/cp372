@@ -1,5 +1,4 @@
 package server;
-
 /* @Author: Colin Morenz 180320150
  * @Date: 6th October 2020
  * 
@@ -15,7 +14,6 @@ public class Database {
 		
 	public node front = null;
 	public node back = null;
-	public int bookNum = 0;
 	/* 
 	 * @description: constructor class.
 	 */
@@ -57,8 +55,6 @@ public class Database {
 		} else {
 			back = temp;
 		}
-		
-		bookNum+=1;
 		return true;	
 	}
     /* 
@@ -79,21 +75,28 @@ public class Database {
     		}
     		temp = temp.next;
     	}
+    	if (list.equals("")){
+    		return "Nothing found.";
+    	}
     	return list;
     }
     /* 
 	 * @
 	 */
-    public boolean delete(String data[]) {
+    public String delete(String data[]) {
     	
     	node prev = null;
     	node temp = front;
+    	int numDel = 0;
+    	String deleted = "Nothing to delete";
     	while(temp != null) { 
-    		if ((data[1] == ("") || data[1] == (temp.getIsbn())) &&
-			(data[2] == ("") || data[2] == (temp.getAuthor())) &&
-			(data[3] == ("") || data[3] == (temp.getTitle())) &&
-			(data[4] == "" || data[4] == (temp.getPublisher())) &&
-			(data[5] == "" || data[5] == (temp.getYear()))) {
+    		if ((data[1].equals("") || data[1].equals(temp.getIsbn())) &&
+			(data[2].equals("") || data[2].equals(temp.getAuthor())) &&
+			(data[3].equals("") || data[3].equals(temp.getTitle())) &&
+			(data[4].equals("") || data[4].equals(temp.getPublisher())) &&
+			(data[5].equals("") || data[5].equals(temp.getYear()))
+    				) 
+    				{
     			//saves the node info in string ending with \n
     			if (front == temp) {
     				front = temp.next;
@@ -103,13 +106,24 @@ public class Database {
     				}
     				
     			} if (back == temp) {
-    				back = prev;
+    				if (!back.equals(front)) {
+    					back = prev;
+    				} else {
+    					back = null;
+    					front = null;
+    				}
     			}
-    			
+    			numDel+=1;
     		}
+    		if (front == null) {
+    			back = null;
+    		}
+    		prev = temp;
     		temp = temp.next;
+    		
     	}
-    	return false;
+    	if (numDel > 0) deleted = "Number of Items deleted: "+ Integer.toString(numDel);
+    	return deleted;
     }
     /* 
 	 * @
@@ -148,6 +162,6 @@ public class Database {
     		return back.getIsbn()+","+back.getAuthor()+","+back.getTitle()+","+back.getPublisher()+","+back.getYear();
     	}
     	
-    	return "";
+    	return "Empty Database";
     }
 }

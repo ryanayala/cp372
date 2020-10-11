@@ -1,0 +1,36 @@
+package server;
+
+import java.net.*;
+import java.io.*;
+import java.util.*;
+
+
+public class lib_Server_multi{
+
+
+    public static void main(String[] args) throws IOException{
+
+    ServerSocket serverSocket=null;
+    Database database = new Database();
+    try{
+        serverSocket = new ServerSocket(80);
+        int counter=0;
+
+        System.out.println("Server has Started");
+
+        while(true){
+            counter++;
+            Socket clientSocket= serverSocket.accept();  
+            System.out.println("Client" + counter + "is Connected");
+            ClientHandler c = new ClientHandler(clientSocket,counter,database);
+            c.start();
+
+        }
+    } catch(IOException e ){
+        System.err.println("Coluld not listen on port: 80");
+        System.exit(1);
+    }
+
+
+}
+}

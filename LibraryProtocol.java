@@ -1,145 +1,128 @@
 package server;
-
 import java.net.*;
 import java.io.*;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
-public class LibraryProtocol implements Runnable{
+public class LibraryProtocol {
 	private static final int WAITFR = 0;      // wait for request.
-    private static final int SHUTTINGDOWN = 1;//prepares to shutdown.
-    PrintWriter toclient= null;
-    BufferedReader fromclient=null;
-    Socket s;
-    
-    String input = "";
-    Database database = null;
-    
-    private String commands = "SUEDPC" ;
+	private static final int INUSE = 1;
+    private static final int SHUTTINGDOWN = 2;//prepares to shutdown.
+    //SUEDP are the command keywords sent from client, requesting an action.
+    private String commands = "SUEDR" ;
     
     int state = WAITFR;
-    Lock lock = new ReentrantLock();
-
-    public LibraryProtocol (Database database,PrintWriter out, BufferedReader in, String input,Socket socket){
-        toclient=out;
-        fromclient=in;
-        s= socket;
-        
-
-    }
     
-    public void run(){
-        try{
-            protocolMethod(database, input);
-        }catch(Exception e){
-            System.out.println(e);
-        }
-        
-    }
-
-
-    
-    /* @method processes the given data
-     *  returns a array of the command, ISBN, author, title, year 
+    /*
+     *  @method processes the given data
+     *  returns a array of the command, ISBN, author, title, publisher, year 
      */
-    public String[] processInput(String theInput) {
-        String command[] = {"","","","","",""};
+    
+    public String processInput(Database database,String theInput) {
+    	
+        String data[] = {"","","","","",""};
         String subString = theInput.toUpperCase();
+        String response = "ERROR";
+         
         if (state == WAITFR && theInput.length() > 0) {
-        	if ((theInput.charAt(0) !=',') && (commands.contains(Character.toString(theInput.charAt(0)).toUpperCase())) && (theInput.charAt(1) == ',') ) {
+        	if ((theInput.charAt(0) !=',') && (commands.contains(
+        			Character.toString(theInput.charAt(0)).toUpperCase())) &&
+        			(theInput.charAt(1) == ',') ) {
+        		
         		for (int i = 0; i < 5; i++) {
-        			command[i] = subString.substring(0,subString.indexOf(',')-1);
+        			data[i] = subString.substring(0,subString.indexOf(',')).toUpperCase();
         			subString = subString.substring(subString.indexOf(',')+1);
         		}
-        	} else { return null; } // error in the first command.
+        		data[5] = subString;
+        	} else { return "error invalid msg."; } // error in the first command.
         }
-        return command;
+        
+        String responce = "No action taken";
+        if (!(data[0].equals("S") || data[0].equals("D") || data[0].equals("R"))) {
+	    	if (this.validateIsbn(data[1]) == false) {
+	    		return "Invalid ISBN";
+	    	}
+        }
+    	//also possible add of isbn.
+
+        if (state == WAITFR) {  
+            switch (data[0]) {
+              case "S":
+                responce = this.searchDatabase(database, data);
+                break;
+              case "U":
+                if (this.insert(database, data)) {
+                	responce = "Insert successful.";
+                }else {
+                	responce = "Insert fail";
+                }
+                break;
+              case "E":
+                if (this.editDatabase(database, data)) {
+                	responce = "Edit successful";
+                } else {
+                	responce = "Edit failed";
+                }
+                break;
+              case "D":
+            	  responce =this.deteleFromDatabase(database, data);
+                break;
+              case "R":
+            	  responce = this.mostRecent(database);
+            	  break;
+            }
+        }
+    	
+    	return responce;
+        
     	}
-    /* @method validated the ISBN
-     * check to see if it length of 10 or 13 and year published.
-     */
+    
     public boolean validateIsbn(String isbn) {//object array is just the filler
+    	
     	try {  
-    	    Integer.parseInt(isbn);
+    	    
     	    if ((isbn.length() == 13)) {
         		//requires algorithm to check isbn number
     	    	return true;
+    	    	
         	}
     	}catch(NumberFormatException e){  
         	    return false;  
       	    }
     	return false;
         }
-    public boolean validateYear(String year) {
-    	try {  
-    	    int numYear = Integer.parseInt(year);
-    	    if (numYear < 0 || numYear > 2020) { 
-        		return true;
-        	}
-    	  } catch(NumberFormatException e){  
-    	    return false;  
-    	  }
-    	return false;
-    	}
+    /* 
+	 * @
+	 */
     public boolean insert(Database database, String[] data) {
-        lock.lock();
-        boolean insert_success = database.insert(data);
-        lock.unlock();
-    	return insert_success;
+    	
+    	return database.insert(data);
     }
+    /* 
+	 * @
+	 */
     public String searchDatabase(Database database, String[] data) {
+    	
     	return database.search(data);
     }
+    /* 
+	 * @
+	 */
     public boolean editDatabase(Database database, String[] data) {	
-        lock.lock();
-        boolean edit_seucess= database.editDatabase(data);
-    	return edit_seucess;
+    	
+    	return database.editDatabase(data);
     }
-    public boolean deteleFromDatabase(Database database, String[] data) {
-        lock.lock();
-        boolean del_success=database.delete(data);
-    	return  del_success;
-
+    /* 
+	 * @
+	 */
+    public String deteleFromDatabase(Database database, String[] data) {
+    	
+    	return database.delete(data);
     }
+    /* 
+	 * @
+	 */
     public String mostRecent(Database database) {
+    	
     	return database.mostRecentlyAddedBook();
     }
-    public void disconnect(){
-        toclient.close();
-    }
-    public String protocolMethod(Database database, String input) {
-        
-        String responce = "No action taken";
-        String[] data = processInput(input);
-        if (this.validateIsbn(data[1]) == false) {
-            return "Invalid ISBN";
-        }
-        //also possible add of isbn.
-
-        if (state == WAITFR) {  
-            switch (data[0]) {
-              case "S":
-                this.searchDatabase(database, data);
-                break;
-              case "U":
-                this.insert(database, data);
-                break;
-              case "E":
-                this.editDatabase(database, data);
-                break;
-              case "D":
-                this.deteleFromDatabase(database,data);
-                break;
-              case "C":
-                this.disconnect();
-                case "P":
-                this.mostRecent(database);
-                  
-            }
-        }
-        
-        return responce;
-    }
-
-    	
 }
+

@@ -1,5 +1,4 @@
 package server;
-
 /* @author: Colin Morenz 180320150
  * @date: October 6th 2020
  * @description: creates a node that contains 5 private values accessed by node methods
